@@ -16,5 +16,6 @@ public class CompanyPerformance implements Serializable {
 
     private String company;
     private double performance;
+    private int position;
 
 }

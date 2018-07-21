@@ -1,7 +1,10 @@
 package com.getyourguide;
 
+import com.getyourguide.loader.DatasetLoader;
 import com.getyourguide.spark.PerformanceAnalyzer;
+import com.getyourguide.spark.PerformanceMetricCalculator;
 import java.nio.file.Paths;
+import java.util.Map;
 import org.apache.spark.sql.SparkSession;
 
 /**
@@ -25,7 +28,11 @@ public class Main {
 
             String fileName = args.length > 0 ? args[0] : Main.class.getClassLoader().getResource(DEFAULT_INPUT_FILE).getFile();
 
-            new PerformanceAnalyzer(fileName).analyze(spark);
+            DatasetLoader loader = new DatasetLoader(fileName, spark);
+            // this is only here so you can follow my thoughts on choosing algorithm for metric calculation
+            new PerformanceAnalyzer().analyze(loader);
+            Map<String, Double> metric = new PerformanceMetricCalculator().calculate(loader);
+            System.out.println("Calculated metrics: " + metric);
         }
     }
 
