@@ -3,12 +3,18 @@ package com.getyourguide.spark;
 import com.getyourguide.model.AdDetails;
 import com.getyourguide.model.CompanyPerformance;
 import java.nio.file.Paths;
+import java.util.List;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.RelationalGroupedDataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
+import scala.Tuple2;
+
+import static org.apache.spark.sql.functions.collect_list;
+import static org.apache.spark.sql.functions.sort_array;
 
 /**
  * Author: Aleksander
@@ -32,11 +38,21 @@ public class PerformanceAnalyzer {
             .map((MapFunction<AdDetails, CompanyPerformance>)PerformanceAnalyzer::calculatePerformance, Encoders.bean(CompanyPerformance.class))
             .cache();
 
-        saveToCsv(rawPerformance.groupBy("company").count(), "counts");
+        RelationalGroupedDataset byCompany = rawPerformance.groupBy("company");
+
+        Dataset<Row> median = byCompany
+            .agg(sort_array(collect_list("performance")))
+            .map((MapFunction<Row, Tuple2<String, Double>>)row -> {
+                List<Double> perf = row.getList(1);
+                return new Tuple2<>(row.getString(0), perf.get(perf.size() / 2));
+            }, Encoders.tuple(Encoders.STRING(), Encoders.DOUBLE()))
+            .toDF("Company", "Median");
+        saveToCsv(median, "median");
+        saveToCsv(byCompany.count(), "counts");
         saveToCsv(rawPerformance, "raw_performance");
     }
 
-    private static CompanyPerformance calculatePerformance(AdDetails ad){
+    private static CompanyPerformance calculatePerformance(AdDetails ad) {
         double consumption = ad.getImpressions() * ad.getCtr() * ad.getCost();
         double performance = ad.getRevenue() / consumption;
         return new CompanyPerformance(ad.getCompany(), performance);
