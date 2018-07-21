@@ -1,8 +1,7 @@
 package com.getyourguide;
 
 import com.getyourguide.spark.PerformanceAnalyzer;
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaSparkContext;
+import java.nio.file.Paths;
 import org.apache.spark.sql.SparkSession;
 
 /**
@@ -12,8 +11,11 @@ import org.apache.spark.sql.SparkSession;
 public class Main {
 
     private static final String DEFAULT_INPUT_FILE = "take_home_test_data.csv";
+    private static final String WIN_UTILS_PATH = "dependencies";
 
     public static void main(String[] args) {
+        System.setProperty("hadoop.home.dir", Paths.get(WIN_UTILS_PATH).toAbsolutePath().toString());
+
         try (SparkSession spark = SparkSession
             .builder()
             .appName("Naive company performance analyzer")
