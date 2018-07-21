@@ -1,1 +1,1 @@
-# GetYourGuide
+Tech task for GetYourGuide position.
